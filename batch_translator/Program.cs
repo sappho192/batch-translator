@@ -13,8 +13,8 @@ public class MyCommands : ConsoleAppBase
 		[Option("i", "Filepath of the source text")] string inputFilePath,
 		[Option("o", "Filepath of the output text")] string outputFilePath,
 		[Option("k", "Filepath of API key-secret pair (csv)")] string apiFilePath,
-		[Option("s", "Language of the source text")] string sourceLanguage = "ja",
-		[Option("t", "Language of the output text")] string targetLanguage = "ko")
+		[Option("s", "Language of the source text")] string sourceLanguage,
+		[Option("t", "Language of the output text")] string targetLanguage)
 	{// -i "C:\BIN\input.txt" -o "C:\BIN\output.txt" -k "C:\BIN\api.csv" -s ja -t ko
 		sk = sourceLanguage;
 		tk = targetLanguage;
