@@ -62,14 +62,6 @@ public class MyCommands : ConsoleAppBase
 				inputFileRow++;
 			}
 
-			if (lastRow == 0)
-			{
-				Console.WriteLine("The output file exists but it's empty.");
-			}
-			else
-			{
-				Console.WriteLine($"Resuming translation from row #{lastRow + 1} of {Path.GetFileName(inputFilePath)}");
-			}
 			if (lastRow == inputFileRow)
 			{
 				Console.WriteLine("The output file is already up to date. Terminating the program.");
@@ -79,6 +71,14 @@ public class MyCommands : ConsoleAppBase
 			{
 				Console.WriteLine("The output file is longer than the input file. Terminating the program.");
 				return;
+			}
+			if (lastRow == 0)
+			{
+				Console.WriteLine("The output file exists but it's empty.");
+			}
+			else
+			{
+				Console.WriteLine($"Resuming translation from row #{lastRow + 1} of {Path.GetFileName(inputFilePath)}");
 			}
 		}
 
