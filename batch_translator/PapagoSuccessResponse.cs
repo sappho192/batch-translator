@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 #pragma warning disable CS8618
 #pragma warning disable CS8603
 
+// Based on auto-generated code by https://app.quicktype.io/
 namespace BatchTranslator
 {
 	public partial class PapagoResponse
