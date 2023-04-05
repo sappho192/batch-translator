@@ -38,7 +38,7 @@ public class MyCommands : ConsoleAppBase
 		apiPairs = csv.GetRecords<ApiPair>().ToList();
 	}
 
-	private void TranslateTextFile(string inputFilePath, string outputFilePath)
+	private static void TranslateTextFile(string inputFilePath, string outputFilePath)
 	{
 		Console.WriteLine($"Reading from {inputFilePath}, result will be saved to {outputFilePath}");
 
