@@ -18,7 +18,7 @@ public class MyCommands : ConsoleAppBase
 		[Option("t", "Language of the output text")] string targetLanguage)
 	{// -i "C:\BIN\input.txt" -o "C:\BIN\output.txt" -k "C:\BIN\api.csv" -s ja -t ko
 		var arguments = Context.Arguments;
-		Console.WriteLine($"Arg: {string.Join(" ", arguments)}");
+		Console.WriteLine($"Executing with arguments: \"{string.Join(" ", arguments)}\"");
 
 		sk = sourceLanguage;
 		tk = targetLanguage;
@@ -64,17 +64,17 @@ public class MyCommands : ConsoleAppBase
 
 			if (lastRow == inputFileRow)
 			{
-				Console.WriteLine("The output file is already up to date. Terminating the program.");
+				Console.WriteLine("The translation of input file has already been finished. Terminating the program.");
 				return;
 			}
 			else if (lastRow > inputFileRow)
 			{
-				Console.WriteLine("The output file is longer than the input file. Terminating the program.");
+				Console.WriteLine("The output file is longer than the input file. This is strange. Terminating the program.");
 				return;
 			}
 			if (lastRow == 0)
 			{
-				Console.WriteLine("The output file exists but it's empty.");
+				Console.WriteLine("(The output file exists but it's empty)");
 			}
 			else
 			{
