@@ -36,7 +36,9 @@ public class MyCommands : ConsoleAppBase
 
 	private void TranslateTextFile(string inputFilePath, string outputFilePath)
 	{
-		Console.WriteLine($"Reading from {inputFilePath}, saving result to {outputFilePath}");
+		Console.WriteLine($"Reading from {inputFilePath}, result will be saved to {outputFilePath}");
+
+
 		bool hasSpareKey;
 		try
 		{
