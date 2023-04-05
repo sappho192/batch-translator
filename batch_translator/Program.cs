@@ -1,4 +1,5 @@
-﻿using BatchTranslator;
+﻿using batch_translator;
+using BatchTranslator;
 using CsvHelper;
 using System.Globalization;
 using System.Net;
@@ -16,10 +17,13 @@ public class MyCommands : ConsoleAppBase
 		[Option("s", "Language of the source text")] string sourceLanguage,
 		[Option("t", "Language of the output text")] string targetLanguage)
 	{// -i "C:\BIN\input.txt" -o "C:\BIN\output.txt" -k "C:\BIN\api.csv" -s ja -t ko
+		var arguments = Context.Arguments;
+		Console.WriteLine($"Arg: {string.Join(" ", arguments)}");
+
 		sk = sourceLanguage;
 		tk = targetLanguage;
 
-		Console.WriteLine("Welcome to BathTranslator");
+		Console.WriteLine("Welcome to BatchTranslator");
 		Console.WriteLine("Initializing WebClient");
 		InitWebClient(apiFilePath);
 		TranslateTextFile(inputFilePath, outputFilePath);
@@ -38,13 +42,52 @@ public class MyCommands : ConsoleAppBase
 	{
 		Console.WriteLine($"Reading from {inputFilePath}, result will be saved to {outputFilePath}");
 
+		// If file at outputFilePath exists, save the index of last row
+		int lastRow = -1;
+		if (File.Exists(outputFilePath))
+		{
+			lastRow = 0;
+			Console.WriteLine("Found existing output file. Checking if it is up to date.");
+
+			using var outputFileRaader = File.OpenText(outputFilePath);
+			while (outputFileRaader.ReadLine() != null)
+			{
+				lastRow++;
+			}
+
+			using var inputFileReader = File.OpenText(inputFilePath);
+			int inputFileRow = 0;
+			while (inputFileReader.ReadLine() != null)
+			{
+				inputFileRow++;
+			}
+
+			if (lastRow == 0)
+			{
+				Console.WriteLine("The output file exists but it's empty.");
+			}
+			else
+			{
+				Console.WriteLine($"Resuming translation from row #{lastRow + 1} of {Path.GetFileName(inputFilePath)}");
+			}
+			if (lastRow == inputFileRow)
+			{
+				Console.WriteLine("The output file is already up to date. Terminating the program.");
+				return;
+			}
+			else if (lastRow > inputFileRow)
+			{
+				Console.WriteLine("The output file is longer than the input file. Terminating the program.");
+				return;
+			}
+		}
 
 		bool hasSpareKey;
 		try
 		{
-			using StreamWriter sw = new(outputFilePath);
+			using StreamWriter sw = lastRow == 0 ? new(outputFilePath) : new(outputFilePath, true);
 
-			var lines = File.ReadLines(inputFilePath);
+			var lines = File.ReadLines(inputFilePath).Skip(lastRow > -1 ? lastRow : 0);
 			foreach (var line in lines)
 			{
 				Console.Write($"Translating {line.TrimEnd()}:");
@@ -52,28 +95,54 @@ public class MyCommands : ConsoleAppBase
 				Console.WriteLine(translated);
 				if (exception != null)
 				{
-					Console.WriteLine($"Translation failed. Detail: {exception.Message}");
-					bool noApiKey = false;
-					do
+					Console.WriteLine($"\tTranslation failed. Detail: {exception.Message}");
+
+					using var response = exception.Response;
+					var httpResponse = (HttpWebResponse)response;
+
+					if (httpResponse.StatusCode == HttpStatusCode.BadRequest)
 					{
-						Console.WriteLine("Trying to use spare API key. (Maybe reached API limit?)");
-						hasSpareKey = NextApiKey();
-						if (hasSpareKey)
+						using var responseData = response.GetResponseStream();
+						using var responseReader = new StreamReader(responseData, Encoding.UTF8);
+						var papagoFailResponse = PapagoFailResponse.FromJson(responseReader.ReadToEnd());
+						Console.WriteLine($"\tResponse message: {papagoFailResponse.ErrorMessage}");
+						break;
+					}
+					else if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
+					{// 
+						using var responseData = response.GetResponseStream();
+						using var responseReader = new StreamReader(responseData, Encoding.UTF8);
+						var papagoFailResponse = PapagoFailResponse.FromJson(responseReader.ReadToEnd());
+						Console.WriteLine($"\tResponse message: {papagoFailResponse.ErrorMessage}");
+
+						bool noApiKey = false;
+						do
 						{
-							translated = Translate(line, out exception);
-							if (exception == null)
+							Console.WriteLine("\tMaybe have reached API limit. Trying to use spare API key.)");
+							hasSpareKey = NextApiKey();
+							if (hasSpareKey)
 							{
-								Console.WriteLine(translated);
+								translated = Translate(line, out exception);
+								if (exception == null)
+								{
+									Console.Write($"\tTranslating {line.TrimEnd()}:");
+									Console.WriteLine(translated);
+								}
 							}
-						}
-						else
-						{
-							Console.WriteLine("API key has been run out");
-							noApiKey = true;
-							break;
-						}
-					} while (translated == string.Empty);
-					if (noApiKey) break;
+							else
+							{
+								Console.WriteLine("API keys have been run out. Add more keys or try again tomorrow.");
+								noApiKey = true;
+								break;
+							}
+						} while (translated == string.Empty);
+						if (noApiKey) break;
+					}
+					else if (httpResponse.StatusCode == HttpStatusCode.InternalServerError)
+					{
+						Console.WriteLine($"\tInternal Server error: {httpResponse.StatusDescription}");
+						break;
+					}
 				}
 
 				sw.WriteLine(translated);
